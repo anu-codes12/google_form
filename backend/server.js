@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import formRoutes from './routes/formRoutes.js';
 import responseRoutes from './routes/responseRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ connectDB();
 // Routes
 app.use('/api', formRoutes);
 app.use('/api', responseRoutes);
+app.use('/api/auth', authRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
