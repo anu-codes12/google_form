@@ -64,10 +64,6 @@ button {
   }
 }
 
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
 
 code {
   font-size: 15px;
