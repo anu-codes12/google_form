@@ -1,26 +1,30 @@
-/* App.css - Minimal styles - Primary styling is done with TailwindCSS */
+/* App.css - Lumina Modern */
 
-/* Ensure main content takes full height */
 main {
   flex: 1;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - Lumina style */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+  background: linear-gradient(180deg, #c7c8fe, #a5a6fc);
+  border-radius: 100px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: linear-gradient(180deg, #a5a6fc, #8183f8);
 }
 
+/* Selection color */
+::selection {
+  background: rgba(99, 102, 241, 0.15);
+  color: #312e81;
+}

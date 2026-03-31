@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, Copy } from 'lucide-react';
+import { Trash2, Copy, GripVertical } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const QuestionInput = ({ question, onChange, onDuplicate, onDelete }) => {
@@ -37,11 +37,18 @@ const QuestionInput = ({ question, onChange, onDuplicate, onDelete }) => {
 
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="card mb-4 border-l-4 border-indigo-500"
+      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="card mb-4 border-l-4 border-primary-500 group"
     >
+      {/* Drag handle indicator */}
+      <div className="flex items-center justify-center mb-3 opacity-0 group-hover:opacity-40 transition-opacity">
+        <GripVertical size={16} className="text-gray-400" />
+      </div>
+
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
           <label className="form-label">Question Title</label>
@@ -54,20 +61,24 @@ const QuestionInput = ({ question, onChange, onDuplicate, onDelete }) => {
           />
         </div>
         <div className="flex gap-2 ml-4">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onDuplicate}
-            className="btn-secondary"
+            className="btn-secondary !px-3"
             title="Duplicate question"
           >
-            <Copy size={18} />
-          </button>
-          <button
+            <Copy size={16} />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onDelete}
-            className="btn-danger"
+            className="btn-danger !px-3"
             title="Delete question"
           >
-            <Trash2 size={18} />
-          </button>
+            <Trash2 size={16} />
+          </motion.button>
         </div>
       </div>
 
@@ -87,47 +98,71 @@ const QuestionInput = ({ question, onChange, onDuplicate, onDelete }) => {
           </select>
         </div>
         <div className="flex items-end">
-          <label className="flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={question.required}
-              onChange={handleRequiredChange}
-              className="w-4 h-4 text-indigo-600"
-            />
-            <span className="ml-2 text-sm text-gray-700">Required</span>
+          <label className="flex items-center cursor-pointer group/toggle">
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={question.required}
+                onChange={handleRequiredChange}
+                className="sr-only"
+              />
+              <div className={`w-10 h-5 rounded-full transition-colors duration-300 ${
+                question.required ? 'bg-primary-500' : 'bg-gray-300'
+              }`}></div>
+              <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-300 ${
+                question.required ? 'translate-x-5' : ''
+              }`}></div>
+            </div>
+            <span className="ml-3 text-sm text-gray-700 font-medium">Required</span>
           </label>
         </div>
       </div>
 
       {hasOptions && (
-        <div className="mb-4">
+        <motion.div layout className="mb-4">
           <label className="form-label">Options</label>
           <div className="space-y-2">
             {question.options.map((option, index) => (
-              <div key={option.id} className="flex gap-2">
-                <input
-                  type="text"
-                  value={option.text}
-                  onChange={(e) => handleOptionChange(index, e.target.value)}
-                  placeholder={`Option ${index + 1}`}
-                  className="form-input"
-                />
-                <button
+              <motion.div
+                key={option.id}
+                layout
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                className="flex gap-2"
+              >
+                <div className="flex items-center gap-2 flex-1">
+                  <span className="w-6 h-6 flex items-center justify-center rounded-full bg-primary-50 text-primary-600 text-xs font-bold flex-shrink-0">
+                    {index + 1}
+                  </span>
+                  <input
+                    type="text"
+                    value={option.text}
+                    onChange={(e) => handleOptionChange(index, e.target.value)}
+                    placeholder={`Option ${index + 1}`}
+                    className="form-input"
+                  />
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => handleRemoveOption(index)}
-                  className="btn-danger"
+                  className="px-3 py-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200"
                 >
-                  <Trash2 size={18} />
-                </button>
-              </div>
+                  <Trash2 size={16} />
+                </motion.button>
+              </motion.div>
             ))}
           </div>
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={handleAddOption}
-            className="btn-secondary mt-2"
+            className="btn-secondary mt-3 text-sm"
           >
-            Add Option
-          </button>
-        </div>
+            + Add Option
+          </motion.button>
+        </motion.div>
       )}
     </motion.div>
   );

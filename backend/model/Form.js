@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import crypto from 'crypto';
 
 const formSchema = new mongoose.Schema(
   {
@@ -46,8 +47,20 @@ const formSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    shareToken: {
+      type: String,
+      index: true,
+      default: () => crypto.randomBytes(16).toString('hex'),
+    },
   },
   { timestamps: true }
 );
+
+// Auto-generate shareToken before saving if not present
+formSchema.pre('save', function () {
+  if (!this.shareToken) {
+    this.shareToken = crypto.randomBytes(16).toString('hex');
+  }
+});
 
 export default mongoose.model('Form', formSchema);

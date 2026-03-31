@@ -2,12 +2,16 @@ import express from 'express';
 import {
   createForm,
   getForm,
+  getFormByToken,
   updateForm,
   getAllForms,
   deleteForm,
 } from '../controllers/formController.js';
 
 const router = express.Router();
+
+// Public route — must be before /:id to avoid conflicts
+router.get('/forms/public/:token', getFormByToken);
 
 router.post('/forms', createForm);
 router.get('/forms', getAllForms);

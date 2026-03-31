@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, AlertCircle, FileText } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Plus, AlertCircle, FileText, Sparkles, TrendingUp } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { formAPI } from '../services/api';
 import FormCard from '../components/FormCard';
 
@@ -34,60 +34,121 @@ const HomePage = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">My Forms</h1>
-        <button
-          onClick={handleCreateForm}
-          className="btn-primary flex items-center gap-2"
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      className="max-w-7xl mx-auto px-4 py-8"
+    >
+      {/* Hero Section */}
+      <div className="mb-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
+          className="mb-6"
         >
-          <Plus size={20} />
-          Create New Form
-        </button>
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles size={16} className="text-primary-500" />
+            <span className="text-xs font-semibold text-primary-600 uppercase tracking-wider">Dashboard</span>
+          </div>
+          <h1 className="text-4xl font-extrabold text-gray-900 mb-2">
+            My <span className="bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">Forms</span>
+          </h1>
+          <p className="text-gray-500 text-lg max-w-xl">
+            Create, share, and analyze forms with ease. Get beautiful insights in real time.
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+          className="flex gap-3 items-center"
+        >
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleCreateForm}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus size={18} />
+            Create New Form
+          </motion.button>
+
+          {forms.length > 0 && (
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-white/60 rounded-xl border border-gray-100 backdrop-blur-sm">
+              <TrendingUp size={16} className="text-emerald-500" />
+              <span className="text-sm text-gray-600 font-medium">{forms.length} form{forms.length !== 1 ? 's' : ''}</span>
+            </div>
+          )}
+        </motion.div>
       </div>
 
       {error && (
-        <motion.div className="mb-6 p-4 bg-red-100 border border-red-400 rounded-lg flex items-start gap-2">
-          <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
-          <p className="text-red-600">{error}</p>
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="mb-6 p-4 bg-red-50/80 border border-red-200/80 rounded-2xl flex items-start gap-3 backdrop-blur-sm"
+        >
+          <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={18} />
+          <p className="text-red-600 text-sm font-medium">{error}</p>
         </motion.div>
       )}
 
       {loading ? (
-        <div className="text-center py-12">
-          <div className="inline-block">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-          </div>
-          <p className="text-gray-600 mt-4">Loading forms...</p>
+        <div className="text-center py-20">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+            className="inline-block"
+          >
+            <div className="w-12 h-12 rounded-full border-[3px] border-primary-200 border-t-primary-600"></div>
+          </motion.div>
+          <p className="text-gray-400 mt-4 text-sm font-medium">Loading your forms...</p>
         </div>
       ) : forms.length === 0 ? (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-12 card"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1 }}
+          className="text-center py-20 card max-w-md mx-auto"
         >
-          <FileText size={48} className="mx-auto text-gray-400 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">No forms yet</h3>
-          <p className="text-gray-600 mb-4">Create your first form to get started</p>
-          <button
+          <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
+            <FileText size={28} className="text-primary-400" />
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">No forms yet</h3>
+          <p className="text-gray-500 mb-6 text-sm">Create your first form to start collecting responses</p>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={handleCreateForm}
             className="btn-primary"
           >
-            Create Form
-          </button>
+            Create Your First Form
+          </motion.button>
         </motion.div>
       ) : (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          transition={{ delay: 0.2 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
         >
-          {forms.map((form) => (
-            <FormCard key={form._id} form={form} />
-          ))}
+          <AnimatePresence>
+            {forms.map((form, index) => (
+              <FormCard
+                key={form._id}
+                form={form}
+                index={index}
+                onFormUpdate={fetchForms}
+                onFormDelete={(deletedId) => setForms(forms.filter(f => f._id !== deletedId))}
+              />
+            ))}
+          </AnimatePresence>
         </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 };
 

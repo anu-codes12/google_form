@@ -1,8 +1,74 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Download, AlertCircle, BarChart3, Users, HelpCircle, Calendar, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formAPI, responseAPI } from '../services/api';
+
+// Simple horizontal bar chart component
+const OptionChart = ({ question, responses }) => {
+  const distribution = useMemo(() => {
+    const counts = {};
+    question.options.forEach((opt) => {
+      counts[opt.text] = 0;
+    });
+
+    responses.forEach((response) => {
+      const answer = response.answers.find((a) => a.questionId === question.id);
+      if (answer) {
+        if (Array.isArray(answer.value)) {
+          answer.value.forEach((v) => {
+            if (counts[v] !== undefined) counts[v]++;
+          });
+        } else if (counts[answer.value] !== undefined) {
+          counts[answer.value]++;
+        }
+      }
+    });
+
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    return Object.entries(counts).map(([label, count]) => ({
+      label,
+      count,
+      percentage: total > 0 ? Math.round((count / total) * 100) : 0,
+    }));
+  }, [question, responses]);
+
+  const maxCount = Math.max(...distribution.map((d) => d.count), 1);
+
+  const barColors = [
+    'from-primary-400 to-primary-600',
+    'from-emerald-400 to-emerald-600',
+    'from-amber-400 to-amber-600',
+    'from-rose-400 to-rose-600',
+    'from-sky-400 to-sky-600',
+    'from-violet-400 to-violet-600',
+    'from-orange-400 to-orange-600',
+    'from-teal-400 to-teal-600',
+  ];
+
+  return (
+    <div className="space-y-2.5">
+      {distribution.map((item, index) => (
+        <div key={item.label} className="flex items-center gap-3">
+          <span className="text-xs text-gray-600 font-medium w-24 truncate text-right flex-shrink-0">
+            {item.label}
+          </span>
+          <div className="flex-1 h-7 bg-gray-100/80 rounded-lg overflow-hidden relative">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${(item.count / maxCount) * 100}%` }}
+              transition={{ duration: 0.6, delay: index * 0.1, ease: 'easeOut' }}
+              className={`h-full bg-gradient-to-r ${barColors[index % barColors.length]} rounded-lg min-w-[2px]`}
+            />
+          </div>
+          <span className="text-xs font-bold text-gray-800 w-12 text-right flex-shrink-0">
+            {item.count} <span className="text-gray-400 font-normal">({item.percentage}%)</span>
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const ResponsesDashboard = () => {
   const { formId } = useParams();
@@ -11,6 +77,7 @@ const ResponsesDashboard = () => {
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('summary');
 
   useEffect(() => {
     fetchData();
@@ -65,11 +132,24 @@ const ResponsesDashboard = () => {
     a.click();
   };
 
+  const chartableQuestions = useMemo(() => {
+    if (!form) return [];
+    return form.questions.filter((q) =>
+      ['multiple_choice', 'checkboxes', 'dropdown'].includes(q.type)
+    );
+  }, [form]);
+
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-        <p className="text-gray-600 mt-4">Loading responses...</p>
+      <div className="text-center py-20">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+          className="inline-block"
+        >
+          <div className="w-12 h-12 rounded-full border-[3px] border-primary-200 border-t-primary-600"></div>
+        </motion.div>
+        <p className="text-gray-400 mt-4 text-sm font-medium">Loading responses...</p>
       </div>
     );
   }
@@ -80,136 +160,256 @@ const ResponsesDashboard = () => {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="card text-center"
+          className="card text-center py-16"
         >
-          <AlertCircle size={48} className="mx-auto text-gray-400 mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800">Form not found</h2>
+          <AlertCircle size={40} className="mx-auto text-gray-300 mb-4" />
+          <h2 className="text-xl font-bold text-gray-800">Form not found</h2>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="mb-6"
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      className="max-w-7xl mx-auto px-4 py-8"
+    >
+      {/* Back button */}
+      <motion.button
+        whileHover={{ x: -2 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => navigate('/')}
+        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors font-medium mb-6"
       >
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-2 btn-secondary mb-6"
-        >
-          <ArrowLeft size={18} />
-          Back
-        </button>
+        <ArrowLeft size={16} />
+        Back to Forms
+      </motion.button>
 
-        <div className="card mb-6">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{form.title}</h1>
-              <p className="text-gray-600 mt-2">{form.description}</p>
-            </div>
-            {responses.length > 0 && (
-              <button
-                onClick={downloadCSV}
-                className="btn-primary flex items-center gap-2"
-              >
-                <Download size={18} />
-                Download CSV
-              </button>
-            )}
+      {/* Header card */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="card mb-6"
+      >
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h1 className="text-2xl font-extrabold text-gray-900 mb-1">{form.title}</h1>
+            <p className="text-gray-500 text-sm">{form.description}</p>
           </div>
+          {responses.length > 0 && (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={downloadCSV}
+              className="btn-primary flex items-center gap-2 text-sm"
+            >
+              <Download size={16} />
+              Export CSV
+            </motion.button>
+          )}
+        </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-blue-600 text-sm font-semibold">Total Responses</p>
-              <p className="text-2xl font-bold text-blue-900">{responses.length}</p>
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.15 }}
+            className="p-4 bg-gradient-to-br from-primary-50 to-primary-100/50 rounded-2xl border border-primary-100/50"
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Users size={14} className="text-primary-500" />
+              <p className="text-primary-600 text-xs font-semibold uppercase tracking-wider">Responses</p>
             </div>
-            <div className="p-4 bg-green-50 rounded-lg">
-              <p className="text-green-600 text-sm font-semibold">Questions</p>
-              <p className="text-2xl font-bold text-green-900">{form.questions.length}</p>
+            <p className="text-2xl font-extrabold text-primary-900">{responses.length}</p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            className="p-4 bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-2xl border border-emerald-100/50"
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <HelpCircle size={14} className="text-emerald-500" />
+              <p className="text-emerald-600 text-xs font-semibold uppercase tracking-wider">Questions</p>
             </div>
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <p className="text-purple-600 text-sm font-semibold">Created</p>
-              <p className="text-sm font-bold text-purple-900">
-                {new Date(form.createdAt).toLocaleDateString()}
-              </p>
+            <p className="text-2xl font-extrabold text-emerald-900">{form.questions.length}</p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.25 }}
+            className="p-4 bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-2xl border border-amber-100/50"
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Calendar size={14} className="text-amber-500" />
+              <p className="text-amber-600 text-xs font-semibold uppercase tracking-wider">Created</p>
             </div>
-          </div>
+            <p className="text-sm font-bold text-amber-900">
+              {new Date(form.createdAt).toLocaleDateString()}
+            </p>
+          </motion.div>
         </div>
       </motion.div>
 
       {error && (
-        <motion.div className="mb-6 p-4 bg-red-100 border border-red-400 rounded-lg flex items-start gap-2">
-          <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
-          <p className="text-red-600">{error}</p>
+        <motion.div className="mb-6 p-4 bg-red-50/80 border border-red-200/80 rounded-2xl flex items-start gap-3">
+          <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={18} />
+          <p className="text-red-600 text-sm font-medium">{error}</p>
         </motion.div>
       )}
 
-      <div>
-        <h2 className="text-2xl font-bold mb-6">Responses</h2>
+      {/* Tabs */}
+      <div className="flex gap-1 mb-6 bg-white/60 backdrop-blur-sm rounded-xl p-1 border border-gray-100 w-fit">
+        {['summary', 'individual'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+              activeTab === tab
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {tab === 'summary' ? (
+              <span className="flex items-center gap-2"><TrendingUp size={14} /> Summary</span>
+            ) : (
+              <span className="flex items-center gap-2"><Users size={14} /> Individual</span>
+            )}
+          </button>
+        ))}
+      </div>
 
-        {responses.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="card text-center"
+      {responses.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="card text-center py-16"
+        >
+          <div className="w-14 h-14 bg-primary-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <BarChart3 size={24} className="text-primary-400" />
+          </div>
+          <p className="text-gray-500 mb-4 text-sm">No responses yet</p>
+          <button
+            onClick={() => navigate(`/form/${formId}`)}
+            className="btn-primary text-sm"
           >
-            <p className="text-gray-600 mb-4">No responses yet</p>
-            <button
-              onClick={() => navigate(`/form/${formId}`)}
-              className="btn-primary"
-            >
-              Fill Form
-            </button>
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-4"
-          >
-            {responses.map((response, index) => (
+            Fill Form
+          </button>
+        </motion.div>
+      ) : activeTab === 'summary' ? (
+        /* Summary View with Charts */
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="space-y-5"
+        >
+          {chartableQuestions.length > 0 && (
+            <>
+              {chartableQuestions.map((question, index) => (
+                <motion.div
+                  key={question.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.08 }}
+                  className="card"
+                >
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <BarChart3 size={14} className="text-primary-500" />
+                      <span className="text-xs font-semibold text-primary-600 uppercase tracking-wider">
+                        {question.type.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <h3 className="text-base font-bold text-gray-900">{question.title}</h3>
+                  </div>
+                  <OptionChart question={question} responses={responses} />
+                </motion.div>
+              ))}
+            </>
+          )}
+
+          {/* Text responses summary */}
+          {form.questions
+            .filter((q) => ['short_answer', 'paragraph'].includes(q.type))
+            .map((question, index) => (
               <motion.div
-                key={response._id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
+                key={question.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: (chartableQuestions.length + index) * 0.08 }}
                 className="card"
               >
-                <div className="mb-4 pb-4 border-b">
-                  <p className="text-sm text-gray-500">
-                    Submitted: {new Date(response.createdAt).toLocaleString()}
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  {form.questions.map((question) => {
-                    const answer = response.answers.find(
-                      (a) => a.questionId === question.id
-                    );
-
+                <h3 className="text-base font-bold text-gray-900 mb-3">{question.title}</h3>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {responses.map((response, rIndex) => {
+                    const answer = response.answers.find((a) => a.questionId === question.id);
+                    if (!answer?.value) return null;
                     return (
-                      <div key={question.id}>
-                        <p className="font-semibold text-gray-800 mb-2">
-                          {question.title}
-                        </p>
-                        <div className="bg-gray-50 p-3 rounded text-gray-700">
-                          {Array.isArray(answer?.value)
-                            ? answer.value.join(', ')
-                            : answer?.value || '(No answer)'}
-                        </div>
+                      <div
+                        key={rIndex}
+                        className="px-4 py-2.5 bg-gray-50/80 rounded-xl text-sm text-gray-700 border border-gray-100/80"
+                      >
+                        {answer.value}
                       </div>
                     );
                   })}
                 </div>
               </motion.div>
             ))}
-          </motion.div>
-        )}
-      </div>
-    </div>
+        </motion.div>
+      ) : (
+        /* Individual Responses */
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="space-y-4"
+        >
+          {responses.map((response, index) => (
+            <motion.div
+              key={response._id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="card"
+            >
+              <div className="mb-4 pb-3 border-b border-gray-100/80 flex items-center justify-between">
+                <p className="text-xs text-gray-400 font-medium">
+                  Response #{index + 1}
+                </p>
+                <p className="text-xs text-gray-400">
+                  {new Date(response.createdAt).toLocaleString()}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {form.questions.map((question) => {
+                  const answer = response.answers.find(
+                    (a) => a.questionId === question.id
+                  );
+
+                  return (
+                    <div key={question.id}>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                        {question.title}
+                      </p>
+                      <div className="px-4 py-2.5 bg-gray-50/80 rounded-xl text-sm text-gray-700 border border-gray-100/80">
+                        {Array.isArray(answer?.value)
+                          ? answer.value.join(', ')
+                          : answer?.value || <span className="text-gray-400 italic">No answer</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
+    </motion.div>
   );
 };
 

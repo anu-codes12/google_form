@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import formRoutes from './routes/formRoutes.js';
 import responseRoutes from './routes/responseRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import { sendInvites } from './controllers/emailController.js';
 
 dotenv.config();
 
@@ -24,6 +25,21 @@ const connectDB = async () => {
     }
     await mongoose.connect(mongoURI);
     console.log('MongoDB connected successfully');
+
+    // Drop the old unique index on shareToken if it exists
+    try {
+      const Form = mongoose.model('Form');
+      const indexes = await Form.collection.indexes();
+      const shareTokenIndex = indexes.find(
+        (idx) => idx.key && idx.key.shareToken && idx.unique
+      );
+      if (shareTokenIndex) {
+        await Form.collection.dropIndex(shareTokenIndex.name);
+        console.log('Dropped old shareToken unique index');
+      }
+    } catch (indexErr) {
+      // Index doesn't exist or already dropped — that's fine
+    }
   } catch (error) {
     console.error('MongoDB connection error:', error.message);
     process.exit(1);
@@ -36,6 +52,9 @@ connectDB();
 app.use('/api', formRoutes);
 app.use('/api', responseRoutes);
 app.use('/api/auth', authRoutes);
+
+// Email route — defined directly to avoid Express 5 router import issues
+app.post('/api/email/invite', sendInvites);
 
 // Health check
 app.get('/api/health', (req, res) => {
