@@ -6,13 +6,28 @@ import formRoutes from './routes/formRoutes.js';
 import responseRoutes from './routes/responseRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import { sendInvites } from './controllers/emailController.js';
+import { protect } from './middleware/authMiddleware.js';
 
 dotenv.config();
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// CORS — allow all .onrender.com origins + localhost for dev
+const allowedOriginPattern = /\.onrender\.com$/;
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman, etc.)
+    if (!origin) return callback(null, true);
+    if (
+      allowedOriginPattern.test(new URL(origin).hostname) ||
+      origin.startsWith('http://localhost')
+    ) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -54,7 +69,7 @@ app.use('/api', responseRoutes);
 app.use('/api/auth', authRoutes);
 
 // Email route — defined directly to avoid Express 5 router import issues
-app.post('/api/email/invite', sendInvites);
+app.post('/api/email/invite', protect, sendInvites);
 
 // Health check
 app.get('/api/health', (req, res) => {

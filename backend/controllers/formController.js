@@ -4,7 +4,7 @@ import crypto from 'crypto';
 // Create a new form
 export const createForm = async (req, res) => {
   try {
-    const { title, description, questions, createdBy } = req.body;
+    const { title, description, questions } = req.body;
 
     if (!title) {
       return res.status(400).json({ message: 'Form title is required' });
@@ -14,7 +14,7 @@ export const createForm = async (req, res) => {
       title,
       description,
       questions: questions || [],
-      createdBy: createdBy || 'anonymous',
+      createdBy: req.user ? req.user._id : 'anonymous',
       shareToken: crypto.randomBytes(16).toString('hex'),
     });
 
@@ -96,10 +96,10 @@ export const updateForm = async (req, res) => {
   }
 };
 
-// Get all forms (for listing)
+// Get all forms for the authenticated user
 export const getAllForms = async (req, res) => {
   try {
-    const forms = await Form.find();
+    const forms = await Form.find({ createdBy: req.user._id }).sort({ createdAt: -1 });
     res.status(200).json({ success: true, data: forms });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching forms', error: error.message });

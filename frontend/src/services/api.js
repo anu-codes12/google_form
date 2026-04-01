@@ -17,6 +17,20 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Auto-redirect to login on 401 (expired/invalid token)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('userInfo');
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Form APIs
 export const formAPI = {
   createForm: (formData) => api.post('/forms', formData),

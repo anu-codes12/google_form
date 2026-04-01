@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, AlertCircle, FileText, Sparkles, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import FormCard from '../components/FormCard';
 
 const HomePage = () => {
@@ -10,10 +11,15 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     fetchForms();
-  }, []);
+  }, [user, navigate]);
 
   const fetchForms = async () => {
     try {
@@ -22,6 +28,10 @@ const HomePage = () => {
       setForms(response.data.data || []);
       setError('');
     } catch (err) {
+      if (err.response?.status === 401) {
+        navigate('/login');
+        return;
+      }
       setError('Failed to load forms. Please try again.');
       console.error(err);
     } finally {
